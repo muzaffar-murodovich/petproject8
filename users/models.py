@@ -30,13 +30,13 @@ class User(AbstractUser, BaseModel):
     )
     
     user_roles = models.CharField(max_length=50, choices=USER_ROLES, default=ORDINARY_USER)
-    AUTH_TYPE = models.CharField(max_length=50, choices=AUTH_TYPE_CHOICES)
-    AUTH_STATUS = models.CharField(choices=AUTH_STATUS, default=NEW)
+    auth_type = models.CharField(max_length=50, choices=AUTH_TYPE_CHOICES)
+    auth_status = models.CharField(choices=AUTH_STATUS, default=NEW)
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
     photo = models.ImageField(upload_to='user_photos/', null=True, blank=True,
-                              validators=FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'heif', 'heic']))
-
+                            validators=[FileExtensionValidator(allowed_extensions=['jpg', 'png'])]  # ✅ list ichida
+    )
     def __str__(self):
         return self.username
     

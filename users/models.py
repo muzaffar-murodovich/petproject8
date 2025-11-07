@@ -78,8 +78,12 @@ class User(AbstractUser, BaseModel):
         refresh = RefreshToken.for_user(self)
         return {
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
+            'refresh': str(refresh), # refresh token deb yozilishi kerak edi
         }
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super(User, self).save(*args, **kwargs)
 
     def clean(self):
         self.check_username()
@@ -87,11 +91,6 @@ class User(AbstractUser, BaseModel):
         self.check_pass()
         self.hashing_password()
         # super(User, self).clean()
-    
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.clean()
-        super(User, self).save(*args, **kwargs)
 
 PHONE_EXPIRE = 2
 EMAIL_EXPIRE = 5
@@ -111,10 +110,9 @@ class UserConfirmation(BaseModel):
         return str(self.user.__str__())
     
     def save(self, *args, **kwargs):
-        if not self.pk:
-            if self.verify_type == VIA_EMAIL:
-                self.expiration_time = datetime.now() + timedelta(minutes=EMAIL_EXPIRE)
-            else:
-                self.expiration_time = datetime.now() + timedelta(minutes=PHONE_EXPIRE)
+        if self.verify_type == VIA_EMAIL:
+            self.expiration_time = datetime.now() + timedelta(minutes=EMAIL_EXPIRE)
+        else:
+            self.expiration_time = datetime.now() + timedelta(minutes=PHONE_EXPIRE)
         super(UserConfirmation, self).save(*args, **kwargs)
     

@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ('updated_time', models.DateTimeField(auto_now=True)),
                 ('user_roles', models.CharField(choices=[('ordinary_user', 'ordinary_user'), ('manager', 'manager'), ('admin', 'admin')], default='ordinary_user', max_length=50)),
                 ('AUTH_TYPE', models.CharField(choices=[('via_email', 'via_email'), ('via_phone', 'via_phone')], max_length=50)),
-                ('AUTH_STATUS', models.CharField(choices=[('new', 'new'), ('code_verified', 'code_verified'), ('done', 'done'), ('photo_step', 'photo_step')], default='new')),
+                ('AUTH_STATUS', models.CharField(choices=[('new', 'new'), ('code_verified', 'code_verified'), ('done', 'done'), ('photo_done', 'photo_done')], default='new')),
                 ('email', models.EmailField(blank=True, max_length=254, null=True, unique=True)),
                 ('phone_number', models.CharField(blank=True, max_length=15, null=True, unique=True)),
                 ('photo', models.ImageField(blank=True, null=True, upload_to='user_photos/')),

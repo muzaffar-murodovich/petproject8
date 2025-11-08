@@ -2,18 +2,23 @@ import datetime
 
 from rest_framework import permissions
 from rest_framework.decorators import permission_classes
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
+
+from .serializers import ChangeUserInformation
+from shared.utility import send_email
 from .serializers import SignUpSerializer
-from .models import User, DONE, CODE_VERIFIED, NEW
+from .models import User, DONE, CODE_VERIFIED, NEW, VIA_EMAIL, VIA_PHONE
 
 class CreateUserView(CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = SignUpSerializer
+
+
 
 class VerifyAPIView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -48,3 +53,63 @@ class VerifyAPIView(APIView):
             user.auth_status = CODE_VERIFIED
             user.save()
         return True
+
+class GetNewVerification(APIView):
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_verification(user)
+        if user.auth_type == VIA_EMAIL:
+            code = user.create_verify_code(VIA_EMAIL)
+            send_email(user.email, code)
+        elif user.auth_type == VIA_PHONE:
+            code = user.create_verify_code(VIA_PHONE)
+            send_email(user.phone_number, code)
+        else:
+            data = {
+                "message": "Invalid authentication type."
+            }
+            raise ValidationError(data)
+        return Response(
+            {
+                "success": True,
+                "message": "A new verification code has been sent."
+            }
+        )
+
+    @staticmethod
+    def check_verification(user):
+        verifies = user.verify_codes.filter(expiration_time__gte=datetime.datetime.now(), is_confirmed=False)
+        if verifies.exists():
+            data = {
+                "message": "You already have a valid verification code."
+            }
+            raise ValidationError(data)
+
+
+
+class ChangeUserInfomationView(UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = ChangeUserInformation
+    http_method_names = ['patch', 'put']
+
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        super(ChangeUserInfomationView, self).update(request, *args, **kwargs)
+        data = {
+            "success": True,
+            "message": "User information updated successfully.",
+            "auth_status": self.request.user.auth_status,
+        }
+        return Response(data, status=200)    
+
+    def partial_update(self, request, *args, **kwargs):
+        super(ChangeUserInfomationView, self).partial_update(request, *args, **kwargs)
+        data = {
+            "success": True,
+            "message": "User information updated successfully.",
+            "auth_status": self.request.user.auth_status,
+        }
+        return Response(data, status=200)

@@ -4,6 +4,7 @@ from .models import (
                     VIA_EMAIL, VIA_PHONE,
                     NEW, CODE_VERIFIED, DONE, PHOTO_STEP
                     )
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers, exceptions
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
@@ -103,3 +104,72 @@ class SignUpSerializer(serializers.ModelSerializer):
         data = super(SignUpSerializer, self).to_representation(instance)
         data.update(instance.token())
         return data
+
+class ChangeUserInformation(serializers.Serializer):
+    first_name = serializers.CharField(write_only=True, required=True)
+    last_name = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=False)
+    confirm_password = serializers.CharField(write_only=True, required=False)
+
+    def validate(self, data):
+        password = data.get('password', None)
+        confirm_password = data.get('confirm_password')
+        if password != confirm_password:
+            raise ValidationError(
+                {
+                    "message": "Passwords do not match."
+                }
+            )
+        if password:
+            validate_password(password)
+            validate_password(confirm_password)
+        
+        return data
+    
+    def validate_username(self, username):
+        if len(username) < 5 or len(username) > 35:
+            raise ValidationError(
+                {
+                    "message": "Username must be at least 5 or at most 32 characters long."
+                }
+            )
+        if username.isdigit():
+            raise ValidationError(
+                {
+                    "message": "Username cannot be entirely numeric."
+                }
+            )
+        return username
+    
+    def validate_first_name(self, first_name):
+        if len(first_name) < 2 or len(first_name) > 30:
+            raise ValidationError(
+                {
+                    "message": "First name must be at least 2 or at most 30 characters long."
+                }
+            )
+        return first_name
+    
+    def validate_last_name(self, last_name):
+        if len(last_name) < 2 or len(last_name) > 30:
+            raise ValidationError(
+                {
+                    "message": "Last name must be at least 2 or at most 30 characters long."
+                }
+            )
+        return last_name
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.password = validated_data.get('password', instance.password)
+        instance.username = validated_data.get('username', instance.username)
+
+        if validated_data.get('password'):
+            instance.set_password(validated_data.get('password'))
+        
+        if instance.auth_status == CODE_VERIFIED:
+            instance.auth_status = DONE
+        instance.save()
+        
+        return instance

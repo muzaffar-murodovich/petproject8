@@ -29,6 +29,25 @@ def check_email_or_phone(email_or_phone):
 
     return email_or_phone
 
+def check_user_type(user_input):
+    phone_number = phonenumbers.parse(user_input)
+    if re.fullmatch(email_regex, user_input):
+        user_input = 'email'
+    
+    elif phonenumbers.is_valid_number(phone_number):
+        user_input = 'phone'
+    
+    elif re.fullmatch(username_regex, user_input):
+        user_input = 'username'
+    
+    else:
+        data = {
+            "success": False,
+            "message": "Email, username yoki telefon raqamingiz notogri"
+        }
+        raise ValidationError(data)
+    return user_input
+
 class EmailThread(threading.Thread):
     def __init__(self,  email):
         self.email = email

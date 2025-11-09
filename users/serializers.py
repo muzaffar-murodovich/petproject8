@@ -1,4 +1,4 @@
-from rest_framework_simplejwt.serializers import TokenObtainSerializer, TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from shared.utility import (check_email_or_phone, send_email, 
                             send_phone_code, check_user_type)
@@ -21,8 +21,6 @@ class SignUpSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(SignUpSerializer, self).__init__(*args, **kwargs)
         self.fields['email_phone_number'] = serializers.CharField(required=False)
-
-    
 
     class Meta:
         model = User

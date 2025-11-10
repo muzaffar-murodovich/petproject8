@@ -7,7 +7,8 @@ from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import LoginSerializer
 
 from .serializers import ChangeUserInformation, ChangeUserPhotoSerializer
 from shared.utility import send_email
@@ -130,3 +131,6 @@ class ChangeUserPhotoView(APIView):
         return Response(
             serializer.errors, status=400
         )
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer

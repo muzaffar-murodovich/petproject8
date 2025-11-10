@@ -15,6 +15,10 @@ from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import PermissionDenied
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.generics import get_object_or_404
+from django.contrib.auth.models import update_last_login
 
 class SignUpSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
@@ -234,6 +238,7 @@ class LoginSerializer(TokenObtainPairSerializer):
             raise PermissionDenied("You cannot login")
         data = self.user.token()
         data['auth_status'] = self.user.auth_status
+        data['full_name'] = self.user.full_name
         return data
 
     def get_user(self, **kwargs):
@@ -245,3 +250,13 @@ class LoginSerializer(TokenObtainPairSerializer):
                 }
             )
         return users.first()
+
+class LoginRefreshSerializer(TokenRefreshSerializer):
+    
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        access_token_instance = AccessToken(data['access'])
+        user_id = access_token_instance['user_id']
+        user = get_object_or_404(User, id=user_id)
+        update_last_login(None, user)
+        return data

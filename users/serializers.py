@@ -10,15 +10,17 @@ from .models import (
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers, exceptions
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth import authenticate
-from rest_framework.exceptions import PermissionDenied
+from django.contrib.auth.models import update_last_login
+
+from rest_framework.exceptions import (PermissionDenied, 
+                                       ValidationError,
+                                       NotFound)
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
-from django.contrib.auth.models import update_last_login
 
 class SignUpSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
@@ -263,3 +265,74 @@ class LoginRefreshSerializer(TokenRefreshSerializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+
+class ForgotPasswordSerilizer(serializers.Serializer):
+    email_or_phone = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        email_or_phone = attrs.get('email_or_phone', None)
+        if email_or_phone is None:
+            raise ValidationError(
+                {
+                    "success": False,
+                    "message": "email or phone number is required"
+                }
+            )
+        user = User.objects.filter(Q(phone_number=email_or_phone) | Q(email=email_or_phone))
+        if not user.exists():
+            raise NotFound(detail="User not found")
+        attrs['user'] = user.first()
+        return attrs
+
+class ResetPasswordSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(read_only=True)
+    password = serializers.CharField(min_length=8, write_only=True, required=True)
+    confirm_password = serializers.CharField(min_length=8, write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'password',
+            'confirm_password'
+        )
+
+    def validate(self, data):
+        password = data.get('password', None)
+        confirm_password = data.get('confirm_password', None)
+        if password != confirm_password:
+            raise ValidationError(
+                {
+                    "success": False,
+                    "message": "Passwords don't match"
+                }
+            )
+        if password:
+            validate_password(password)
+        return data
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password')
+        instance.set_password(password)
+        return super(ResetPasswordSerializer, self).update(instance, validated_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -9,53 +9,53 @@ from shared.models import BaseModel
 User = get_user_model()
 
 class Post(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    image = models.ImageField(upload_to='post_images/', validators=[
-        FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
-    caption = models.TextField(validators=[MaxLengthValidator(200)])
+   author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+   image = models.ImageField(upload_to='post_images/', validators=[
+       FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
+   caption = models.TextField(validators=[MaxLengthValidator(200)])
 
-    class Meta:
-        db_table = 'posts'
-        verbose_name = 'post'
-        verbose_name_plural = 'posts'
+   class Meta:
+       db_table = 'posts'
+       verbose_name = 'post'
+       verbose_name_plural = 'posts'
 
 class PostComment(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    comment = models.TextField(validators=[MaxLengthValidator(200)])
-    parent = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        related_name='children',
-        null=True,
-        blank=True
-    )
-    # class Meta:
-    #     db_table = 'comments'
-    #     verbose_name = 'comment'
-    #     verbose_name_plural = 'comments'
+   author = models.ForeignKey(User, on_delete=models.CASCADE)
+   post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+   comment = models.TextField(validators=[MaxLengthValidator(200)])
+   parent = models.ForeignKey(
+       'self',
+       on_delete=models.CASCADE,
+       related_name='children',
+       null=True,
+       blank=True
+   )
+   # class Meta:
+   #     db_table = 'comments'
+   #     verbose_name = 'comment'
+   #     verbose_name_plural = 'comments'
 
-class PostLike(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+class PostLike(BaseModel):
+   author = models.ForeignKey(User, on_delete=models.CASCADE)
+   post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
 
-    class Meta:
-        constraints = [
-            UniqueConstraint(
-                fields=['author', 'post'],
-            )
-        ]
-        db_table = 'post_likes'
-        verbose_name = 'like'
-        verbose_name_plural = 'likes'
+   class Meta:
+       constraints = [
+         UniqueConstraint(
+             fields=['author', 'post'],
+             name='postLikeUnique'
+         )
+       ]
+
 
 class CommentLike(BaseModel):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    comment = models.ForeignKey(PostComment, on_delete=models.CASCADE, related_name='likes')
+   author = models.ForeignKey(User, on_delete=models.CASCADE)
+   comment = models.ForeignKey(PostComment, on_delete=models.CASCADE, related_name='likes')
 
-    class Meta:
-        constraints = [
-            UniqueConstraint(
-                fields=['author', 'comment'],
-            )
-        ]
+   class Meta:
+       constraints = [
+         UniqueConstraint(
+             fields=['author', 'comment'],
+             name='CommentLikeUnique'
+         )
+       ]

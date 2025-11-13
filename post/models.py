@@ -51,9 +51,6 @@ class PostLike(BaseModel):
           )
         ]
 
-    def __str__(self):
-        return f"{self.author} post like {self.post}"
-
 
 class CommentLike(BaseModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -66,6 +63,3 @@ class CommentLike(BaseModel):
               name='CommentLikeUnique'
           )
         ]
-
-    def __str__(self):
-        return f"{self.author} comment like {self.comment}"
